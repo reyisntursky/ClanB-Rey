@@ -277,4 +277,96 @@ document.addEventListener('DOMContentLoaded', () => {
         footerObserver.observe(footerTagline);
     }
 
+    // ---- Background Shaped Lines Canvas ----
+    const canvas = document.getElementById('bg-canvas');
+    if (canvas) {
+        const ctx = canvas.getContext('2d');
+        let width, height;
+        let particles = [];
+        let mouseX = -1000;
+        let mouseY = -1000;
+
+        const resize = () => {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+            initParticles();
+        };
+
+        const initParticles = () => {
+            particles = [];
+            // Adjust particle count based on screen size for performance and visual density
+            const numParticles = Math.floor((width * height) / 12000);
+            for (let i = 0; i < numParticles; i++) {
+                particles.push({
+                    x: Math.random() * width,
+                    y: Math.random() * height,
+                    vx: (Math.random() - 0.5) * 0.4,
+                    vy: (Math.random() - 0.5) * 0.4
+                });
+            }
+        };
+
+        const drawLines = () => {
+            ctx.clearRect(0, 0, width, height);
+
+            // update positions
+            particles.forEach(p => {
+                p.x += p.vx;
+                p.y += p.vy;
+                // Bounce off edges
+                if (p.x < 0 || p.x > width) p.vx *= -1;
+                if (p.y < 0 || p.y > height) p.vy *= -1;
+            });
+
+            // draw lines between close particles
+            for (let i = 0; i < particles.length; i++) {
+                for (let j = i + 1; j < particles.length; j++) {
+                    const p1 = particles[i];
+                    const p2 = particles[j];
+                    const dist = Math.hypot(p1.x - p2.x, p1.y - p2.y);
+
+                    if (dist < 150) {
+                        const midX = (p1.x + p2.x) / 2;
+                        const midY = (p1.y + p2.y) / 2;
+                        const mouseDist = Math.hypot(mouseX - midX, mouseY - midY);
+
+                        // Base opacity (low opacity, almost grey)
+                        let opacity = (1 - (dist / 150)) * 0.15;
+
+                        // Brighter on hover
+                        if (mouseDist < 200) {
+                            opacity += (1 - mouseDist / 200) * 0.4;
+                        }
+
+                        ctx.beginPath();
+                        ctx.moveTo(p1.x, p1.y);
+                        ctx.lineTo(p2.x, p2.y);
+                        ctx.strokeStyle = `rgba(180, 180, 180, ${opacity})`;
+                        ctx.lineWidth = 1;
+                        ctx.stroke();
+                    }
+                }
+            }
+
+            requestAnimationFrame(drawLines);
+        };
+
+        window.addEventListener('resize', resize);
+        document.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+        });
+
+        // Reset mouse position when leaving window
+        document.addEventListener('mouseleave', () => {
+            mouseX = -1000;
+            mouseY = -1000;
+        });
+
+        resize();
+        drawLines();
+    }
+
 });
