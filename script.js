@@ -157,7 +157,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ---- Quote word-by-word scroll reveal ----
     const quoteSection = document.getElementById('quote-section');
-    const quoteWords = document.querySelectorAll('.quote-word');
+    let quoteWords = document.querySelectorAll('.quote-word');
 
     if (quoteSection && quoteWords.length > 0) {
         const updateQuoteWords = () => {
@@ -194,6 +194,61 @@ document.addEventListener('DOMContentLoaded', () => {
         window.addEventListener('scroll', () => {
             requestAnimationFrame(updateQuoteWords);
         }, { passive: true });
+
+        const quoteTextContainer = document.getElementById('quote-text');
+        
+        // Store original content to allow toggling back
+        const originalQuoteHTML = quoteTextContainer ? quoteTextContainer.innerHTML : '';
+
+        // Click to change quote
+        quoteSection.addEventListener('click', () => {
+            if (!quoteTextContainer) return;
+
+            const isChanged = quoteTextContainer.dataset.changed === 'true';
+            
+            // Toggle state
+            quoteTextContainer.dataset.changed = isChanged ? 'false' : 'true';
+            
+            // Fade out
+            quoteTextContainer.style.opacity = '0';
+            
+            setTimeout(() => {
+                if (isChanged) {
+                    // Revert to original
+                    quoteTextContainer.innerHTML = originalQuoteHTML;
+                } else {
+                    // Change to new quote
+                    quoteTextContainer.innerHTML = `
+                        <span class="quote-word">We</span>
+                        <span class="quote-word">change</span>
+                        <span class="quote-word">behavior.</span>
+                    `;
+                }
+
+                // Re-query words and re-run highlight logic
+                quoteWords = document.querySelectorAll('.quote-word');
+                
+                // Re-apply cursors to new words
+                quoteWords.forEach(word => {
+                    word.style.cursor = 'pointer';
+                });
+
+                updateQuoteWords();
+                
+                // Fade in
+                quoteTextContainer.style.opacity = '1';
+            }, 300);
+        });
+
+        if (quoteTextContainer) {
+            quoteTextContainer.style.transition = 'opacity 0.3s ease';
+            quoteTextContainer.style.cursor = 'pointer';
+            
+            // Update cursor for individual words as well since they have a default cursor in CSS
+            quoteWords.forEach(word => {
+                word.style.cursor = 'pointer';
+            });
+        }
 
         // Initial check
         updateQuoteWords();
